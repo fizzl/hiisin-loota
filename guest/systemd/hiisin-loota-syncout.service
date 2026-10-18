@@ -1,0 +1,11 @@
+[Unit]
+Description=hiisin-loota: sync workspace back to host on shutdown
+After=hiisin-loota-agent.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/usr/local/sbin/hiisin-loota-sync-out
+TimeoutStopSec=120
+[Install]
+WantedBy=multi-user.target

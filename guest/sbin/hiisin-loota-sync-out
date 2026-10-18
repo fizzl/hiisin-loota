@@ -1,0 +1,6 @@
+#!/bin/bash
+# Stream /home/agent/workspace as a tar to the host (CID 2, port 5002).
+set -eu
+cd /home/agent/workspace
+excl=(); [ -f .hiisin-lootaignore ] && excl=(--exclude-from=.hiisin-lootaignore)
+tar -c "${excl[@]}" . | socat -u - VSOCK-CONNECT:2:5002

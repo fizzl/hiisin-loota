@@ -1,0 +1,4 @@
+#!/bin/bash
+# Sync the workspace to the host and end the VM. Talks to the root-owned control
+# socket; there is no sudo in the guest.
+printf 'done\n' | socat -t 130 - UNIX-CONNECT:/run/hiisin-loota/ctl.sock

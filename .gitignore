@@ -1,0 +1,6 @@
+artifacts/
+*.ext4
+*.img
+vmlinux*
+examples/
+/CLAUDE.md

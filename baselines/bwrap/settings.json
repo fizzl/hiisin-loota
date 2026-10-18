@@ -1,0 +1,16 @@
+{
+  "_comment": "Claude Code built-in sandbox (bubblewrap + socat on Linux). Baseline for comparison. Copy into ~/.claude/settings.json or pass with --settings. strictAllowlist is ignored in project settings, so this file must be used at user scope or via --settings. Source: code.claude.com/docs/en/sandboxing and settings-reference#sandbox-settings.",
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/gcloud", "~/.claude/.credentials.json"]
+    },
+    "network": {
+      "allowedDomains": ["api.anthropic.com", "registry.npmjs.org", "github.com", "*.githubusercontent.com"],
+      "strictAllowlist": true
+    }
+  }
+}

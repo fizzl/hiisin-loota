@@ -1,0 +1,10 @@
+{
+  "boot-source": {
+    "kernel_image_path": "@KERNEL@",
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off root=/dev/vda ro rootfstype=ext4 init=/usr/local/sbin/hiisin-loota-init hiisin-loota.upper=@UPPER_SIZE@ systemd.unit=multi-user.target loglevel=3 hiisin-loota.ip=@GUEST_IP@/@PREFIX@ hiisin-loota.gw=@HOST_IP@ hiisin-loota.proxy=@HOST_IP@:@PROXY_PORT@ hiisin-loota.broker=@HOST_IP@:@BROKER_PORT@"
+  },
+  "drives": [{ "drive_id": "rootfs", "path_on_host": "@ROOTFS@", "is_root_device": true, "is_read_only": true }],
+  "network-interfaces": [{ "iface_id": "eth0", "guest_mac": "AA:FC:00:00:00:01", "host_dev_name": "@TAP_DEV@" }],
+  "vsock": { "guest_cid": 3, "uds_path": "@VSOCK@" },
+  "machine-config": { "vcpu_count": @VCPUS@, "mem_size_mib": @MEM_MIB@, "smt": false }
+}

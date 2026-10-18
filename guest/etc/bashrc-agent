@@ -1,0 +1,20 @@
+export PATH=/usr/local/bin:$PATH
+cd ~/workspace 2>/dev/null || true
+alias cc='claude --dangerously-skip-permissions'
+# On the serial console, wait for the host to finish provisioning (credentials,
+# workspace, terminal size). The host then writes ~/.hiisin-loota-ready with
+# "shell" or "claude" (run-vm.sh --claude).
+if [ "$(tty 2>/dev/null)" = /dev/ttyS0 ] && [ -z "${HIISIN_LOOTA_HINT_SHOWN:-}" ]; then
+  export HIISIN_LOOTA_HINT_SHOWN=1
+  for _ in $(seq 1 300); do [ -f ~/.hiisin-loota-ready ] && break; sleep 0.2; done
+  if [ -f ~/.hiisin-loota-ready ]; then
+    echo "hiisin-loota guest. Workspace: ~/workspace. Run 'cc' for claude with permissions bypassed."
+    echo "Run 'hiisin-loota-sync' to push the workspace back to the host, 'hiisin-loota-done' to sync and end the VM. No sudo here."
+    if [ "$(cat ~/.hiisin-loota-ready)" = claude ]; then
+      echo "Starting claude; when it exits you get a shell, 'hiisin-loota-done' ends the VM."
+      claude --dangerously-skip-permissions
+    fi
+  else
+    echo "hiisin-loota guest: host provisioning did not finish in 60 s; no credentials or workspace yet."
+  fi
+fi

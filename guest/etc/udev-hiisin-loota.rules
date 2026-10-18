@@ -1,0 +1,1 @@
+KERNEL=="vsock", MODE="0600", OWNER="root", GROUP="root"

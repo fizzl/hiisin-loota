@@ -1,0 +1,10 @@
+[Unit]
+Description=hiisin-loota control socket (agent -> root: sync, done)
+[Socket]
+ListenStream=/run/hiisin-loota/ctl.sock
+SocketUser=root
+SocketGroup=agent
+SocketMode=0660
+Accept=yes
+[Install]
+WantedBy=sockets.target

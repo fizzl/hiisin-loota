@@ -1,0 +1,20 @@
+# Egress allowlist for the guest. One entry per line; "host" exact, ".suffix"
+# matches the domain and all subdomains; "host:port" to allow a non-default
+# port (443 for CONNECT, 80 for plain HTTP). Loaded by bin/egress-proxy.py.
+# Seeded from a --egress-log-only measurement run.
+# Claude Code's API traffic does NOT go through here: it goes to the host
+# credential broker (bin/cred-broker.py), which forwards to api.anthropic.com
+# with the host's token. Claude Code 2.1.294 still tries a few direct
+# connections to api.anthropic.com (no token on them) and to
+# http-intake.logs.us5.datadoghq.com (telemetry); both are denied and claude
+# works without them, slightly faster even. Do not add Anthropic hosts here.
+# npm
+registry.npmjs.org
+# PyPI
+pypi.org
+files.pythonhosted.org
+# GitHub
+github.com
+api.github.com
+codeload.github.com
+.githubusercontent.com

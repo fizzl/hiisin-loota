@@ -1,0 +1,19 @@
+#!/bin/bash
+# One connection on /run/hiisin-loota/ctl.sock, run as root by systemd. The
+# agent user has no sudo; this is its only way to ask root for anything, and
+# the vocabulary is exactly three verbs with no arguments.
+#   sync  -> stream the workspace to the host
+#   done  -> sync, then reboot (Firecracker exits on reboot, not on poweroff)
+#   oom   -> print the number of OOM kills this boot (agent is not in adm, so
+#            it cannot read the kernel log itself)
+IFS= read -r -t 10 verb || exit 1
+case "$verb" in
+  oom) dmesg 2>/dev/null | grep -c 'Out of memory: Killed';;
+  sync|done)
+    if /usr/local/sbin/hiisin-loota-sync-out; then echo "ok: workspace synced"; else echo "sync-out FAILED, workspace not copied back"; fi
+    if [ "$verb" = done ]; then
+      oom=$(dmesg 2>/dev/null | grep -c 'Out of memory: Killed'); [ "$oom" -gt 0 ] && echo "hiisin-loota: $oom OOM kill(s) this session" | tee /dev/console
+      echo "rebooting"; systemctl reboot
+    fi;;
+  *) echo "unknown verb"; exit 1;;
+esac

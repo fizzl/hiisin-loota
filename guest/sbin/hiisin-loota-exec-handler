@@ -1,0 +1,43 @@
+#!/bin/bash
+# Handler for vsock port 5003. Reads a bash script from stdin up to a line
+# "__HIISIN_LOOTA_EOF__" (Firecracker vsock does not propagate half-close, so an
+# explicit terminator is needed), runs it as agent in the workspace, and
+# returns combined output. Exit status is reported on the last line.
+# Optional header lines before the script:
+#   __HIISIN_LOOTA_TIMEOUT__=N  bound the run to N seconds: the script runs in its
+#                               own session and the process group is killed on expiry (exit 124)
+#   __HIISIN_LOOTA_STDIN__=N    N bytes of data follow the terminator and are the
+#                               script's stdin (otherwise /dev/null). The script
+#                               must read exactly N bytes (head -c N).
+# The script is read line by line with bash so nothing past the terminator is
+# consumed before the script runs; keep scripts small and put bulk in the data phase.
+f="$(mktemp /tmp/hiisin-loota-exec.XXXXXX)"
+to=0; data=0; hdr=1
+while IFS= read -r l; do
+  [ "$l" = "__HIISIN_LOOTA_EOF__" ] && break
+  if [ "$hdr" = 1 ]; then case "$l" in
+    __HIISIN_LOOTA_TIMEOUT__=*) to="${l#*=}"; continue;;
+    __HIISIN_LOOTA_STDIN__=*) data="${l#*=}"; continue;;
+    *) hdr=0;; esac; fi
+  printf '%s\n' "$l" >> "$f"
+done
+chown agent "$f"
+cd /home/agent/workspace
+# The listener runs at oom_score_adj -1000 (unit); agent work must not inherit that.
+echo 0 > /proc/self/oom_score_adj
+# setsid: the script becomes a session + process group leader, so the group can be killed as a unit.
+if [ "$data" -gt 0 ] 2>/dev/null; then
+  # A backgrounded command gets /dev/null as stdin unless stdin is redirected explicitly: hand the socket over via fd 3.
+  exec 3<&0
+  HIISIN_LOOTA_STDIN="$data" setsid runuser -u agent -- bash -c 'set -a; . /etc/profile.d/hiisin-loota.sh; set +a; exec bash "$1"' _ "$f" <&3 2>&1 &
+else
+  setsid runuser -u agent -- bash -c 'set -a; . /etc/profile.d/hiisin-loota.sh; set +a; exec bash "$1"' _ "$f" </dev/null 2>&1 &
+fi
+pid=$!
+if [ "$to" -gt 0 ] 2>/dev/null; then
+  ( sleep "$to"; touch "$f.timeout"; kill -TERM -- -"$pid" 2>/dev/null; sleep 5; kill -KILL -- -"$pid" 2>/dev/null ) 2>/dev/null & timer=$!
+fi
+wait "$pid"; rc=$?
+if [ -n "${timer:-}" ]; then { pkill -P "$timer"; kill "$timer"; wait "$timer"; } 2>/dev/null; [ -e "$f.timeout" ] && rc=124; fi
+echo "__HIISIN_LOOTA_EXIT__=$rc"
+rm -f "$f" "$f.timeout"

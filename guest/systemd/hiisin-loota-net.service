@@ -1,0 +1,11 @@
+[Unit]
+Description=hiisin-loota guest networking from kernel cmdline
+DefaultDependencies=no
+After=sysinit.target
+Before=network.target hiisin-loota-agent.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/hiisin-loota-net
+[Install]
+WantedBy=multi-user.target

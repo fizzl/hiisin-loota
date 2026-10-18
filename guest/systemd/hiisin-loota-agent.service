@@ -1,0 +1,12 @@
+[Unit]
+Description=hiisin-loota vsock listeners (workspace in, credentials in)
+After=hiisin-loota-net.service home-agent-.claude.mount
+Requires=home-agent-.claude.mount
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/hiisin-loota-agent
+Restart=on-failure
+# The exec channel must outlive guest memory pressure; agent processes keep the default 0.
+OOMScoreAdjust=-1000
+[Install]
+WantedBy=multi-user.target

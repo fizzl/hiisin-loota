@@ -1,0 +1,24 @@
+#!/bin/bash
+# Configure eth0 from hiisin-loota.ip=<cidr> hiisin-loota.gw=<ip> on the kernel cmdline,
+# and write /run/hiisin-loota/env from hiisin-loota.proxy= and hiisin-loota.broker=.
+set -eu
+proxy=""; broker=""
+for kv in $(cat /proc/cmdline); do case "$kv" in hiisin-loota.ip=*) ip_cidr="${kv#*=}";; hiisin-loota.gw=*) gw="${kv#*=}";; hiisin-loota.proxy=*) proxy="${kv#*=}";; hiisin-loota.broker=*) broker="${kv#*=}";; esac; done
+ip link set lo up
+ip addr add "$ip_cidr" dev eth0
+ip link set eth0 up
+ip route add default via "$gw"
+# The host resolves names inside the proxy; the guest's own lookups go to the
+# host, which rejects them, so they fail fast instead of timing out.
+printf 'nameserver %s\noptions timeout:1 attempts:1\n' "$gw" > /etc/resolv.conf
+mkdir -p /run/hiisin-loota
+if [ -n "$proxy" ]; then
+  u="http://$proxy"
+  { for v in HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY npm_config_proxy npm_config_https_proxy PIP_PROXY; do echo "$v=$u"; done
+    for v in NO_PROXY no_proxy npm_config_noproxy; do echo "$v=localhost,127.0.0.1,$gw"; done; } > /run/hiisin-loota/env
+fi
+if [ -n "$broker" ]; then
+  # Claude Code talks plain HTTP to the host broker, which holds the real token.
+  # The placeholder only stops Claude Code from asking for a login.
+  { echo "ANTHROPIC_BASE_URL=http://$broker"; echo "ANTHROPIC_AUTH_TOKEN=hiisin-loota-broker-placeholder"; } >> /run/hiisin-loota/env
+fi

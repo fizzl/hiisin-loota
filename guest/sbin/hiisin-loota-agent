@@ -1,0 +1,14 @@
+#!/bin/bash
+# vsock listener on port 5003: the host sends a bash script (terminated by a
+# __HIISIN_LOOTA_EOF__ line); it runs as the agent user in the workspace and the
+# output streams back. Workspace and credential pushes ride on this channel as
+# inline base64 tars (see host bin/sync-in.sh and bin/push-creds.sh).
+# Host is trusted, guest is not: nothing here lets the guest reach the host.
+set -eu
+modprobe vmw_vsock_virtio_transport 2>/dev/null || true
+# Only root (this listener and the ctl service) talks vsock; the agent must not
+# be able to open AF_VSOCK and push its own stream at the host's sync-out port.
+chmod 0600 /dev/vsock 2>/dev/null || true
+# Sandbox description for Claude Code; /home/agent/.claude is a fresh tmpfs each boot.
+ln -sfn /opt/hiisin-loota/CLAUDE.md /home/agent/.claude/CLAUDE.md
+exec socat VSOCK-LISTEN:5003,reuseaddr,fork EXEC:/usr/local/sbin/hiisin-loota-exec-handler,stderr

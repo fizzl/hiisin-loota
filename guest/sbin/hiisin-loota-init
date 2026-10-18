@@ -1,0 +1,15 @@
+#!/bin/bash
+# PID 1 shim: the kernel mounted /dev/vda read-only as /. Put a tmpfs-backed
+# overlay on top so the guest can write anywhere while the image stays pristine
+# and shared across runs, then hand over to systemd. On any failure fall back
+# to systemd on the read-only root so the guest is still reachable for diagnosis.
+fail() { echo "hiisin-loota-init: $* -- booting on read-only root" >/dev/console; exec /lib/systemd/systemd "$@"; }
+mount -t proc proc /proc || fail "mount /proc"
+size=$(sed -n 's/.*hiisin-loota\.upper=\([^ ]*\).*/\1/p' /proc/cmdline); : "${size:=2G}"
+mount -t tmpfs -o "size=$size,mode=0755" tmpfs /mnt || fail "mount tmpfs"
+mkdir -p /mnt/upper /mnt/work /mnt/newroot || fail "mkdir"
+mount -t overlay overlay -o lowerdir=/,upperdir=/mnt/upper,workdir=/mnt/work /mnt/newroot || fail "mount overlay"
+cd /mnt/newroot || fail "cd"
+pivot_root . mnt || fail "pivot_root"
+umount /mnt/proc 2>/dev/null || true
+exec chroot . /lib/systemd/systemd "$@"

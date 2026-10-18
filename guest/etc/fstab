@@ -1,0 +1,3 @@
+# / is a tmpfs-backed overlay over the read-only /dev/vda, set up by
+# hiisin-loota-init before systemd starts; no entry for it here.
+tmpfs /home/agent/.claude tmpfs mode=0700,uid=1000,gid=1000,size=64m 0 0

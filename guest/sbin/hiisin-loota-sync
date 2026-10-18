@@ -1,0 +1,3 @@
+#!/bin/bash
+# Push a snapshot of the workspace to the host without ending the VM.
+printf 'sync\n' | socat -t 130 - UNIX-CONNECT:/run/hiisin-loota/ctl.sock

@@ -1,0 +1,7 @@
+[Unit]
+Description=hiisin-loota control connection
+[Service]
+ExecStart=/usr/local/sbin/hiisin-loota-ctl
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
